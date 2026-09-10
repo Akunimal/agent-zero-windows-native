@@ -20,7 +20,13 @@ EXTENSIONS_DIR = "extensions"
 USER_DIR = "usr"
 TEMP_DIR = "tmp"
 API_DIR = "api"
-_base_dir = os.path.dirname(os.path.abspath(os.path.join(__file__, "../")))
+_base_dir = os.path.abspath(
+    os.environ.get("A0_BASE_DIR")
+    or os.path.dirname(os.path.abspath(os.path.join(__file__, "../")))
+)
+_user_dir = os.path.abspath(
+    os.environ.get("A0_USER_DIR") or os.path.join(_base_dir, USER_DIR)
+)
 
 class VariablesPlugin(ABC):
     @abstractmethod
@@ -576,6 +582,12 @@ def make_dirs(relative_path: str):
 def _resolve_path(*relative_paths):
     if len(relative_paths) == 1 and os.path.isabs(relative_paths[0]):
         return relative_paths[0]
+    if relative_paths:
+        first = str(relative_paths[0]).replace("\\", "/").lstrip("./")
+        if first == USER_DIR or first.startswith(f"{USER_DIR}/"):
+            remainder = first[len(USER_DIR):].lstrip("/")
+            tail = (remainder, *relative_paths[1:]) if remainder else relative_paths[1:]
+            return os.path.join(_user_dir, *tail)
     return os.path.join(_base_dir, *relative_paths)
 
 
@@ -602,6 +614,9 @@ def get_abs_path_development(*relative_paths):
 
 def deabsolute_path(path: str):
     "Convert absolute paths to relative paths based on the base directory."
+    if is_in_dir(path, _user_dir):
+        relative = os.path.relpath(path, _user_dir)
+        return os.path.join(USER_DIR, relative)
     return os.path.relpath(path, get_base_dir())
 
 
@@ -642,6 +657,11 @@ def get_base_dir():
     return _base_dir
 
 
+def get_user_dir():
+    """Return the writable per-user data directory used by this runtime."""
+    return _user_dir
+
+
 def basename(path: str, suffix: str | None = None):
     if suffix:
         return os.path.basename(path).removesuffix(suffix)
@@ -653,14 +673,18 @@ def dirname(path: str):
 
 
 def is_in_base_dir(path: str):
-    return is_in_dir(path, get_base_dir())
+    return is_in_dir(path, get_base_dir()) or is_in_dir(path, get_user_dir())
 
 
 def is_in_dir(path: str, dir: str):
     # check if the given path is within the directory
     abs_path = os.path.abspath(path)
     abs_dir = os.path.abspath(dir)
-    return os.path.commonpath([abs_path, abs_dir]) == abs_dir
+    try:
+        return os.path.commonpath([abs_path, abs_dir]) == abs_dir
+    except ValueError:
+        # Windows cannot compute a common path across different drive letters.
+        return False
 
 
 def get_subdirectories(

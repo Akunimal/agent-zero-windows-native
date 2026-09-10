@@ -1,0 +1,41 @@
+name: Windows Electron artifacts
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "windows-v*"
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: windows-latest
+    timeout-minutes: 90
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: electron/package-lock.json
+
+      - name: Setup uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          version: latest
+
+      - name: Build installer and portable executable
+        shell: pwsh
+        run: .\scripts\build-electron.ps1
+
+      - name: Upload Windows artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: agent-zero-windows
+          path: artifacts/electron/*
+          if-no-files-found: error

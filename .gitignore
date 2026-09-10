@@ -5,6 +5,11 @@
 *.py[cod]
 **/.conda/
 **/node_modules/
+**/dist/
+**/artifacts/
+.a0-build/
+.a0-dev-data/
+electron/build/*.ico
 
 #Ignore IDE files
 .cursor/

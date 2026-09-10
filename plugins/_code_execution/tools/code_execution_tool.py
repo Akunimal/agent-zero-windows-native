@@ -1,8 +1,10 @@
 import asyncio
 import errno
 from dataclasses import dataclass
+import os
 import re
 import shlex
+import sys
 import time
 
 from helpers.tool import Tool, Response
@@ -35,6 +37,16 @@ def _group_multiline_command(command: str, powershell: bool = False) -> str:
         return body
     opener = ". {" if powershell else "{"
     return f"{opener}\n{body}\n}}"
+
+
+def _quote_shell_arg(value: str, powershell: bool) -> str:
+    """Quote one argument for the shell actually used by the session."""
+    text = str(value)
+    if powershell:
+        # PowerShell escapes a single quote by doubling it. Do not route
+        # commands through cmd.exe or an implicit shell.
+        return "'" + text.replace("'", "''") + "'"
+    return shlex.quote(text)
 
 
 @dataclass
@@ -179,14 +191,40 @@ class CodeExecution(Tool):
         return self.state
 
     async def execute_python_code(self, cfg: dict, session: int, code: str, reset: bool = False):
-        escaped_code = shlex.quote(code)
-        command = f"ipython -c {escaped_code}"
+        powershell = runtime.is_windows() and not cfg["ssh_enabled"]
+        if runtime.is_native_windows():
+            python_executable = os.environ.get("A0_PYTHON_EXECUTABLE") or sys.executable
+            command = (
+                f"{_quote_shell_arg(python_executable, powershell)} -c "
+                f"{_quote_shell_arg(code, powershell)}"
+            )
+        else:
+            command = f"ipython -c {_quote_shell_arg(code, powershell)}"
         prefix = "python> " + self.format_command_for_output(code) + "\n\n"
         return await self.terminal_session(cfg, session, command, reset, prefix)
 
     async def execute_nodejs_code(self, cfg: dict, session: int, code: str, reset: bool = False):
-        escaped_code = shlex.quote(code)
-        command = f"node /exe/node_eval.js {escaped_code}"
+        powershell = runtime.is_windows() and not cfg["ssh_enabled"]
+        if runtime.is_native_windows():
+            node_executable = os.environ.get("A0_NODE_EXECUTABLE") or "node"
+            node_eval_script = os.environ.get("A0_NODE_EVAL_SCRIPT")
+            if not node_eval_script:
+                node_eval_script = os.path.join(
+                    os.path.dirname(
+                        os.path.dirname(
+                            os.path.dirname(os.path.dirname(__file__))
+                        )
+                    ),
+                    "windows-native",
+                    "node_eval.cjs",
+                )
+            command = (
+                f"{_quote_shell_arg(node_executable, powershell)} "
+                f"{_quote_shell_arg(node_eval_script, powershell)} "
+                f"{_quote_shell_arg(code, powershell)}"
+            )
+        else:
+            command = f"node /exe/node_eval.js {_quote_shell_arg(code, powershell)}"
         prefix = "node> " + self.format_command_for_output(code) + "\n\n"
         return await self.terminal_session(cfg, session, command, reset, prefix)
 
@@ -561,6 +599,8 @@ class CodeExecution(Tool):
 # ------------------------------------------------------------------
 
 def _resolve_ssh_enabled(raw_value) -> bool:
+    if runtime.is_native_windows():
+        return False
     val = str(raw_value).strip().lower()
     if val == "auto":
         return not runtime.is_dockerized()

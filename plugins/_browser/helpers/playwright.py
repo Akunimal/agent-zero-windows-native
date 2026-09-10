@@ -13,6 +13,7 @@ FULL_CHROMIUM_PATTERNS = (
     "chromium-*/chrome-win*/chrome.exe",
 )
 PLAYWRIGHT_CACHE_ENV = "A0_BROWSER_PLAYWRIGHT_CACHE_DIR"
+PLAYWRIGHT_EXECUTABLE_ENV = "A0_BROWSER_EXECUTABLE_PATH"
 PLAYWRIGHT_CACHE_DIR = ("tmp", "playwright")
 RETIRED_PLAYWRIGHT_CACHE_DIRS = (
     ("usr", "plugins", "_browser", "playwright"),
@@ -73,6 +74,11 @@ def _chromium_revision(binary: Path) -> int:
 
 
 def get_playwright_binary() -> Path | None:
+    configured = os.environ.get(PLAYWRIGHT_EXECUTABLE_ENV, "").strip()
+    if configured:
+        configured_path = Path(configured).expanduser()
+        if configured_path.is_file():
+            return configured_path
     cache_dir = _primary_cache_dir()
     binary = find_playwright_binary(_primary_cache_dir())
     revision = get_playwright_chromium_revision()
@@ -96,6 +102,15 @@ def get_playwright_chromium_revision() -> str:
 
 
 def ensure_playwright_binary() -> Path:
+    configured = os.environ.get(PLAYWRIGHT_EXECUTABLE_ENV, "").strip()
+    if configured:
+        configured_path = Path(configured).expanduser()
+        if not configured_path.is_file():
+            raise RuntimeError(
+                f"Configured Chromium executable does not exist: {configured_path}"
+            )
+        return configured_path
+
     binary = get_playwright_binary()
     if binary:
         return binary

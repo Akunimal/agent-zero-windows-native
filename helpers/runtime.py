@@ -1,5 +1,6 @@
 import argparse
 import inspect
+import os
 import secrets
 from pathlib import Path
 from typing import TypeVar, Callable, Awaitable, Union, overload, cast
@@ -60,6 +61,12 @@ def is_dockerized() -> bool:
     return bool(get_arg("dockerized"))
 
 
+def is_native_windows() -> bool:
+    """Whether the Electron distribution executes tools on Windows itself."""
+    value = os.environ.get("A0_NATIVE_WINDOWS", "")
+    return is_windows() and value.strip().lower() in {"1", "true", "yes", "on"}
+
+
 def is_development() -> bool:
     return not is_dockerized()
 
@@ -98,7 +105,13 @@ async def call_development_function(func: Callable[..., T], *args, **kwargs) -> 
 async def call_development_function(
     func: Union[Callable[..., T], Callable[..., Awaitable[T]]], *args, **kwargs
 ) -> T:
-    if is_development():
+    if is_native_windows():
+        # Native mode deliberately has no RFC/Docker companion.
+        result = func(*args, **kwargs)
+        if inspect.isawaitable(result):
+            return cast(T, await result)
+        return cast(T, result)
+    elif is_development():
         url = _get_rfc_url()
         password = _get_rfc_password()
         # Normalize path components to build a valid Python module path across OSes

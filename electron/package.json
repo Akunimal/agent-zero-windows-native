@@ -1,0 +1,20 @@
+{
+  "name": "agent-zero-electron-windows",
+  "productName": "Agent Zero Windows",
+  "version": "0.1.0",
+  "description": "Electron Windows distribution of Agent Zero with an embedded Python runtime.",
+  "main": "main.cjs",
+  "author": "Akunimal",
+  "license": "MIT",
+  "private": false,
+  "scripts": {
+    "dev": "electron .",
+    "start": "electron .",
+    "test": "node --test ../tests/windows-native/*.test.cjs",
+    "build:windows": "powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -File ..\\scripts\\build-electron.ps1"
+  },
+  "devDependencies": {
+    "electron": "^37.2.6",
+    "electron-builder": "^26.0.12"
+  }
+}

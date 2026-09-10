@@ -568,6 +568,7 @@ def _write_sensitive_settings(settings: Settings):
 
 def get_default_settings() -> Settings:
     gitignore = files.read_file(files.get_abs_path("conf/workdir.gitignore"))
+    native_windows = runtime.is_native_windows()
     return Settings(
         version=_get_version(),
         api_keys={},
@@ -584,7 +585,12 @@ def get_default_settings() -> Settings:
         ui_control_visibility=_normalize_ui_control_visibility(
             get_default_value("ui_control_visibility", UI_CONTROL_VISIBILITY_DEFAULTS)
         ),
-        workdir_path=get_default_value("workdir_path", files.get_abs_path_dockerized("usr/workdir")),
+        workdir_path=get_default_value(
+            "workdir_path",
+            files.get_abs_path_development("usr/workdir")
+            if native_windows
+            else files.get_abs_path_dockerized("usr/workdir"),
+        ),
         workdir_show=get_default_value("workdir_show", True),
         workdir_max_depth=get_default_value("workdir_max_depth", 5),
         workdir_max_files=get_default_value("workdir_max_files", 20),
@@ -599,7 +605,7 @@ def get_default_settings() -> Settings:
         file_browser_max_transfer_size_mb=get_default_value("file_browser_max_transfer_size_mb", 100),
         file_browser_max_extract_size_mb=get_default_value("file_browser_max_extract_size_mb", 100),
         file_browser_max_archive_entries=get_default_value("file_browser_max_archive_entries", 1000),
-        rfc_auto_docker=get_default_value("rfc_auto_docker", True),
+        rfc_auto_docker=get_default_value("rfc_auto_docker", not native_windows),
         rfc_url=get_default_value("rfc_url", "localhost"),
         rfc_password="",
         rfc_port_http=get_default_value("rfc_port_http", 55080),
@@ -614,7 +620,7 @@ def get_default_settings() -> Settings:
         variables="",
         secrets="",
         litellm_global_kwargs=get_default_value("litellm_global_kwargs", {}),
-        update_check_enabled=get_default_value("update_check_enabled", True),
+        update_check_enabled=get_default_value("update_check_enabled", not native_windows),
         chat_inherit_project=get_default_value("chat_inherit_project", True),
     )
 

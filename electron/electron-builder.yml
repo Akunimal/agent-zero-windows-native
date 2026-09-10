@@ -1,0 +1,43 @@
+appId: ai.agentzero.windows
+productName: Agent Zero Windows
+artifactName: ${productName}-${version}-${arch}.${ext}
+asar: true
+compression: maximum
+directories:
+  output: ../artifacts/electron
+  buildResources: build
+files:
+  - main.cjs
+  - preload.cjs
+  - package.json
+  - build/**
+extraResources:
+  - from: ../.a0-build/staging/backend
+    to: backend
+    filter:
+      - '**/*'
+  - from: ../.a0-build/staging/python
+    to: python
+    filter:
+      - '**/*'
+  - from: ../.a0-build/staging/node
+    to: node
+    filter:
+      - '**/*'
+  - from: ../.a0-build/staging/chromium
+    to: chromium
+    filter:
+      - '**/*'
+win:
+  target:
+    - nsis
+    - portable
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: Agent Zero Windows
+portable:
+  artifactName: Agent-Zero-Windows-${version}-portable.${ext}

@@ -2,10 +2,41 @@
 
 <img src="docs/res/a0-vector-graphics/horizontal_banner.svg" alt="Agent Zero Banner" width="100%"/>
 
-# Agent Zero
-### Give your agent a full Linux computer.
+# Agent Zero — Windows Native
+### Run Agent Zero natively on Windows without Docker.
 
-Agent Zero is an open agent framework for work that needs more than chat: a Dockerized Linux desktop, a browser with DOM annotation, live document cowork, projects, skills, plugins, and a bridge back to your host machine.
+Agent Zero is an open agent framework for work that needs more than chat: browser automation, live document cowork, projects, skills, plugins, and a bridge back to your host machine. This public fork adds a Windows-native Electron distribution for users who do not want to install or run Docker.
+
+## Windows Electron fork
+
+This repository is a public fork maintained by **Akunimal** with a focused goal: produce a Windows installer and a portable Windows distribution that embeds the Agent Zero Python backend, its Python dependencies, Chromium/Playwright, and the Node.js runtime. The Electron shell starts the backend in the background, keeps the UI on loopback, uses Windows-safe argument quoting, and shuts down the child process tree cleanly without opening a console window.
+
+The native Windows mode is intentionally separate from the upstream Docker mode. The fork keeps the upstream project structure and makes the native behavior opt-in through small, documented contracts so future upstream updates can be merged with minimal conflicts. See [the Windows native documentation](./docs/windows-native/README.md) and [the upstream maintenance contract](./docs/windows-native/UPSTREAM-CONTRACT.md).
+
+> **Explicit security warning — read before using:** native Windows mode has **no Docker sandbox**. Agent Zero and its code-execution tools can access the Windows account, files, processes, network, and installed programs that can be reached by the packaged process. Use a standard, dedicated Windows account or a VM; avoid administrator privileges; keep backups; and use trusted prompts or models that are instructed to avoid destructive actions. Treat every generated command as potentially capable of modifying or deleting data. The red warning banner is also shown inside the Electron UI.
+
+The public fork contains no OpenCode Zen endpoint, `opencode2api` binary, Tor binary, private routing policy, API key, or private runtime configuration. Those belong to a separate local launcher outside this Git repository.
+
+## Windows native quick start
+
+1. Download the Windows installer or portable artifact from a release.
+2. Start the application. It includes Python, the Python dependencies, Node.js, and Chromium; a system Python or Docker installation is not required.
+3. Read and acknowledge the native-mode warning before giving the agent access to real files or tools.
+
+For development and local packaging, see [the Windows native build guide](./docs/windows-native/README.md). The upstream Docker installation remains available below for users who want the stronger container boundary.
+
+### Runtime boundary
+
+| Capability | Windows Native | Upstream Docker |
+| --- | --- | --- |
+| Docker/WSL required | No | Yes, for the local Docker route |
+| Python, Node.js, Chromium | Bundled in installer/portable build | Provided by the container/image |
+| Code execution | Native PowerShell, Python, and Node on Windows | Container runtime, with optional host bridge |
+| Linux XFCE desktop / Docker Canvas | Not included | Available in the container workflow |
+| Host filesystem access | Directly available to the Windows account | Only through mounts/connector you grant |
+| Isolation boundary | Electron renderer isolation only; **no backend sandbox** | Docker boundary, weakened by mounts/privileged options |
+
+The native build is intended for trusted, local workflows. It is not a drop-in replacement for Docker isolation, and any upstream feature that requires a Linux container may be unavailable or behave differently on Windows.
 
 [![Website](https://img.shields.io/badge/Website-agent--zero.ai-0A192F?style=for-the-badge&logo=vercel&logoColor=white)](https://agent-zero.ai)
 [![Docs](https://img.shields.io/badge/Docs-Read%20the%20guides-1F6FEB?style=for-the-badge&logo=readthedocs&logoColor=white)](./docs/)
@@ -13,7 +44,8 @@ Agent Zero is an open agent framework for work that needs more than chat: a Dock
 [![GitHub Sponsors](https://img.shields.io/badge/Sponsors-Thank%20you-FF69B4?style=for-the-badge&logo=githubsponsors&logoColor=white)](https://github.com/sponsors/agent0ai)
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/agent0ai/agent-zero)
 
-[Quick Start](#quick-start) |
+[Windows Native](#windows-native-quick-start) |
+[Docker / Upstream](#upstream-docker-quick-start) |
 [Why Agent Zero](#why-agent-zero) |
 [Try These First](#try-these-first) |
 [Deep Dives](#deep-dives) |
@@ -21,15 +53,14 @@ Agent Zero is an open agent framework for work that needs more than chat: a Dock
 
 </div>
 
-<div align="center">
-<img alt="Agent Zero driving Blender in its built-in XFCE desktop" src="docs/res/usage/webui/agentzero-xfce-computer.gif" width="100%" />
-</div>
+> The XFCE desktop screenshots and Docker Canvas references below describe the upstream container workflow. They are not part of the Windows-native Electron runtime.
 
 # Why Agent Zero
 
 | Feature | Why it matters |
 | --- | --- |
-| **Full Linux desktop** | The agent can use real GUI software, terminals, files, and desktop apps inside the Canvas. |
+| **Windows-native runtime** | Run the Python backend, embedded Python dependencies, Chromium, and Node.js without Docker or a system Python installation. |
+| **Full Linux desktop (Docker only)** | The upstream Docker distribution can provide a Linux desktop, terminals, files, and desktop apps inside the Canvas. |
 | **Browser DOM annotation** | Click page elements and turn them into inspect, change, lift, or review instructions. |
 | **Live document cowork** | Edit Markdown, Writer, Spreadsheet, and Presentation files together instead of losing work in chat. |
 | **Plugin Hub** | Install 100+ community plugins or publish your own extension points. |
@@ -38,9 +69,9 @@ Agent Zero is an open agent framework for work that needs more than chat: a Dock
 | **Multi-agent cooperation** | Let agents delegate research, coding, analysis, or review tasks to focused subagents. |
 | **Transparent internals** | Prompts, tools, plugins, skills, and settings are inspectable and editable. |
 
-# Quick Start
+# Upstream Docker Quick Start
 
-## Recommended: A0 Launcher
+## Recommended for the Docker route: A0 Launcher
 
 The desktop **A0 Launcher** is the fastest guided path on a personal machine. Download it, open it, and let it check Docker, create Instances, manage ports, and connect to local or remote Agent Zero installs.
 
@@ -107,16 +138,17 @@ Open the Web UI, configure your LLM provider, and start with a concrete task. Fo
 
 - **Annotate a design you like:** "Open this template site in the Browser. I'll annotate the hero section - re-implement it in my project's React + Tailwind stack."
 - **Cowork on a spreadsheet:** "Create an editable ODS budget model with assumptions and monthly projections."
-- **Drive a desktop app:** "Use the Linux Desktop to open Blender and create a simple 3D logo for me."
+- **Native Windows task:** "Inspect this project, explain the changes first, and only edit files after I approve the plan. Do not delete or overwrite data."
+- **Drive a Linux desktop (Docker only):** "Use the Linux Desktop to open Blender and create a simple 3D logo for me."
 - **Review a web UI:** "Open my local app in the Browser. I will annotate the page with comments; then implement the requested UI fixes."
 - **Create a specialist:** "Create an Agent Profile for financial analysis with cautious reasoning, clear assumptions, and spreadsheet-first deliverables."
 - **Recover a workspace:** "Show me recent Time Travel snapshots and explain what changed before I revert anything."
 
 # Deep Dives
 
-## A Real Linux Desktop in the Canvas
+## A Real Linux Desktop in the Canvas (Docker only)
 
-Agent Zero opens its own Linux desktop inside the right-side Canvas. Not a remote VM, not a shared clipboard, but a real XFCE desktop session running in the container.
+The upstream Docker distribution opens its own Linux desktop inside the right-side Canvas. Not a remote VM, not a shared clipboard, but a real XFCE desktop session running in the container. The Windows-native Electron build does not create this Linux desktop or Docker boundary; it runs Windows tools directly on the host.
 
 That means the agent can drive *real desktop software*: open Blender to model a 3D object, jump into a terminal window, manage files visually, run a GUI tool that has no API.
 
@@ -138,7 +170,7 @@ Annotate mode turns any webpage into an interactive directive surface. Click an 
 - **Lift it** - see a card, hero, or component on someone else's site that you like? Capture it and have the agent re-implement it in your own project's stack.
 - **Comment it** - leave actionable notes pinned to elements during a UI review; the agent reads the comments and ships the fixes.
 
-The Docker browser is the default live Browser surface. Browser history keeps screenshots of important steps, so older chats can still show what the agent saw. The Browser also supports Chrome extensions inside the Docker browser, and **Bring Your Own Browser** through the A0 CLI Connector lets the agent drive Chrome, Edge, Brave, Opera, Vivaldi, or Chromium on your own machine.
+In Windows-native mode, Browser uses the Chromium build embedded in the package and runs with the Windows account's network and filesystem permissions. In Docker mode, the Docker browser is the default live Browser surface. Browser history keeps screenshots of important steps, so older chats can still show what the agent saw. **Bring Your Own Browser** through the A0 CLI Connector is an optional host integration and is not a sandbox.
 
 See the [Browser guide](./docs/guides/browser.md) for screenshots, settings, host-browser setup, and troubleshooting.
 
@@ -155,9 +187,9 @@ It's not a preview pane. It's a real editor with toolbar, formatting buttons, ta
 
 Use it for plans, TODOs, meeting notes, RFCs, project handoffs, or any artifact where the deliverable should *live as text* rather than be trapped inside chat scrollback.
 
-### LibreOffice Integration
+### LibreOffice Integration (Docker or separately installed host software)
 
-LibreOffice Writer, Calc, and Impress are wired up so you can type by hand while Agent Zero creates, updates, saves, and verifies the same files in real time.
+LibreOffice Writer, Calc, and Impress are available when the relevant desktop software and integration are installed. The Windows-native package does not include a Linux LibreOffice desktop; install and test any host application separately before granting the agent access.
 
 ODT, ODS, and ODP binary formats are first-class citizens in the Agent Zero Desktop environment to align with the Open Document Format (ODF).
 
@@ -194,9 +226,9 @@ This is the first step toward account-backed LLM plans in Agent Zero. More integ
 <img alt="A0 CLI driving the host browser through a Google Cloud VM creation flow" src="docs/res/usage/a0-cli/host-browser.gif" />
 <br>
 
-The **A0 CLI Connector** is not a separate CLI agent. It connects to a running Agent Zero instance and gives that instance a terminal-native bridge to your host machine - so the same agent (with all its memory, projects, and skills) can also work on real files outside the Docker container.
+The **A0 CLI Connector** is not a separate CLI agent. For Docker installations, it gives a running Agent Zero instance a controlled bridge to the host machine. In Windows-native mode the backend already runs on the host, so the connector is optional and does not add isolation.
 
-Install the connector on the machine you want Agent Zero to work on, **not** inside the Agent Zero container.
+For Docker installations, install the connector on the machine you want Agent Zero to work on, **not** inside the Agent Zero container.
 
 ### macOS / Linux
 
@@ -245,7 +277,7 @@ Agent Zero supports plugins, MCP, A2A, custom tools, custom prompts, project-sco
 
 ## Time Travel
 
-Time Travel gives Agent Zero-owned `/a0/usr` workspaces snapshot history, diff inspection, travel, and revert. It is designed for recoverable agent work: see what changed, compare files, inspect a past state, and roll back when needed.
+Time Travel gives Agent Zero-owned workspaces snapshot history, diff inspection, travel, and revert where the selected runtime supports it. Docker uses `/a0/usr`; Windows-native mode stores user data under the configured Agent Zero Windows user directory. It is designed for recoverable agent work, but it is not a replacement for backups or Windows file protections.
 
 <img alt="Time Travel" src="docs/res/time-travel.png" />
 
@@ -254,7 +286,7 @@ It is not a replacement for Git or backups. It is a practical safety layer for t
 ## Real-World Use Cases
 
 - **Software engineering:** inspect a codebase, make scoped edits, run tests, explain tradeoffs, and keep a recoverable history of file changes.
-- **Host-machine development:** connect with `a0` and let Agent Zero work in your real local repositories, or clone them through Git Projects feature in the Web UI.
+- **Host-machine development:** Windows-native mode can work in local repositories directly; Docker installations can use `a0` or the Git Projects feature with an explicit host bridge.
 - **Design inspiration and UI iteration:** browse the web, annotate elements you like, and pull components into your own stack.
 - **Financial analysis and charting:** collect data, correlate events, create spreadsheets, and generate editable charts.
 - **Office deliverables:** cowork on documents, spreadsheets, and presentation decks instead of trapping the result in chat text.
@@ -267,10 +299,12 @@ It is not a replacement for Git or backups. It is a practical safety layer for t
 
 | I want to... | Start here |
 | --- | --- |
+| Run Agent Zero natively on Windows | [Windows native guide](./docs/windows-native/README.md) |
+| Review the native Windows security model | [Security warning](./docs/windows-native/SECURITY.md) |
 | Install or update Agent Zero | [Installation](./docs/setup/installation.md) |
 | Learn the UI and basic workflow | [Quickstart](./docs/quickstart.md) |
 | Browse, annotate, and use Browser screenshots | [Browser guide](./docs/guides/browser.md) |
-| Use the Linux desktop and LibreOffice | [Desktop guide](./docs/guides/desktop.md) |
+| Use the Linux desktop and LibreOffice in Docker | [Desktop guide](./docs/guides/desktop.md) |
 | Connect Agent Zero to host-machine files and shell | [A0 CLI Connector](https://www.agent-zero.ai/p/docs/a0-cli-connector/) |
 | Use projects and Git workspaces | [Projects guide](./docs/guides/projects.md) |
 | Create a small plugin | [Create a Small Plugin](./docs/guides/create-plugin.md) |
@@ -299,15 +333,23 @@ You can help by improving docs, creating skills, publishing plugins, testing mod
 - [X](https://x.com/Agent0ai), [LinkedIn](https://www.linkedin.com/company/109758317), and [Warpcast](https://warpcast.com/agent-zero) for updates.
 - [GitHub Issues](https://github.com/agent0ai/agent-zero/issues) for bugs and feature requests.
 
-[Space Agent](https://github.com/agent0ai/space-agent) is the related, more polished product direction for the agent-shaped workspace. Agent Zero remains the open framework and Linux-powered workbench.
+[Space Agent](https://github.com/agent0ai/space-agent) is the related, more polished product direction for the agent-shaped workspace. Agent Zero remains the open framework; this fork adds a Windows-native runtime while preserving the upstream Docker route.
 
 ## Safety Model
 
-Agent Zero is powerful because it can use a real environment.
+Agent Zero is powerful because it can use a real environment. Choose the runtime boundary deliberately.
 
-- Keep it running inside Docker or another isolated environment.
+### Windows Native
+
+- There is **no Docker sandbox**. The backend and code-execution tools run with the Windows account's permissions.
+- Use a dedicated standard account or VM; do not run the portable build as Administrator.
+- Prefer trusted prompts and models that explicitly avoid destructive actions. Review commands before allowing deletes, overwrites, credential access, network changes, or production actions.
+- Keep private endpoints and credentials outside the public repository, build logs, and crash reports.
+- Keep backups. Time Travel is not a substitute for Git, backups, or OS-level access controls.
+
+### Docker / upstream
+
+- Docker provides the stronger default boundary, but mounts, host bridges, credentials, and privileged settings can weaken it.
 - Do not mount your entire home directory unless you understand the risk.
 - Grant A0 CLI Read+Write access and remote code execution only for machines and workspaces you trust.
-- Store credentials in project secrets or settings, not in prompts or public files.
 - Review actions that touch accounts, money, production systems, or private data.
-- Keep backups for important workspaces.
