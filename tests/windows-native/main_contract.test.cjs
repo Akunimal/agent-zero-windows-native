@@ -19,6 +19,8 @@ test("Electron backend spawn is hidden, loopback-only, and shell-free", () => {
   assert.match(main, /A0_BROWSER_EXECUTABLE_PATH/);
   assert.match(main, /A0_USER_DIR \|\|/);
   assert.match(main, /ensureUserLayout/);
+  assert.match(main, /fs\.openSync/);
+  assert.match(main, /stdio: \["ignore", backendLogFd, backendLogFd\]/);
   assert.doesNotMatch(main, /shell:\s*true/);
 });
 

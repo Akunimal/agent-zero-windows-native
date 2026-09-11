@@ -35,7 +35,7 @@ const logRoot = path.join(app.getPath("userData"), "logs");
 
 let mainWindow;
 let backendProcess;
-let backendLog;
+let backendLogFd;
 let stopping = false;
 
 function ensureDirectory(directory) {
@@ -141,31 +141,56 @@ function buildBackendEnvironment(port) {
   return env;
 }
 
+function writeBackendLog(message) {
+  if (typeof backendLogFd !== "number") return;
+  try {
+    fs.writeSync(backendLogFd, message);
+  } catch {
+    // Logging must never prevent shutdown or surface the backend UI.
+  }
+}
+
+function closeBackendLog() {
+  if (typeof backendLogFd !== "number") return;
+  try {
+    fs.closeSync(backendLogFd);
+  } catch {
+    // The descriptor may already be closed after a spawn failure.
+  }
+  backendLogFd = undefined;
+}
+
 function startBackend(port) {
   const python = findPython();
   const script = path.join(resourceRoot, "run_ui.py");
   const env = buildBackendEnvironment(port);
   const logPath = path.join(logRoot, "agent-zero-backend.log");
-  backendLog = fs.createWriteStream(logPath, { flags: "a" });
-  backendLog.write(`\n[${new Date().toISOString()}] starting native backend\n`);
-  backendLog.write(`python=${python}\nroot=${resourceRoot}\nuser=${userRoot}\n`);
-
-  backendProcess = spawn(
-    python,
-    [script, `--host=127.0.0.1`, `--port=${port}`],
-    {
-      cwd: resourceRoot,
-      env,
-      shell: false,
-      windowsHide: true,
-      stdio: ["ignore", backendLog, backendLog],
-    },
-  );
+  backendLogFd = fs.openSync(logPath, "a");
+  writeBackendLog(`\n[${new Date().toISOString()}] starting native backend\n`);
+  writeBackendLog(`python=${python}\nroot=${resourceRoot}\nuser=${userRoot}\n`);
+  try {
+    backendProcess = spawn(
+      python,
+      [script, `--host=127.0.0.1`, `--port=${port}`],
+      {
+        cwd: resourceRoot,
+        env,
+        shell: false,
+        windowsHide: true,
+        stdio: ["ignore", backendLogFd, backendLogFd],
+      },
+    );
+    writeBackendLog(`pid=${backendProcess.pid}\n`);
+  } catch (error) {
+    writeBackendLog(`[spawn-throw] ${error?.stack || error}\n`);
+    closeBackendLog();
+    throw error;
+  }
   backendProcess.on("error", (error) => {
-    backendLog?.write(`[spawn-error] ${error.stack || error}\n`);
+    writeBackendLog(`[spawn-error] ${error.stack || error}\n`);
   });
   backendProcess.on("exit", (code, signal) => {
-    backendLog?.write(`[exit] code=${code} signal=${signal}\n`);
+    writeBackendLog(`[exit] code=${code} signal=${signal}\n`);
     if (!stopping && mainWindow && !mainWindow.isDestroyed()) {
       showRuntimeError(
         new Error(`Agent Zero backend stopped (code=${code}, signal=${signal})`),
@@ -211,15 +236,17 @@ function createWindow(url) {
 
 function stopBackend() {
   stopping = true;
-  if (!backendProcess || backendProcess.killed) return Promise.resolve();
+  if (!backendProcess) {
+    closeBackendLog();
+    return Promise.resolve();
+  }
   const child = backendProcess;
   let finished = false;
   return new Promise((resolve) => {
     const finish = () => {
       if (finished) return;
       finished = true;
-      backendLog?.end();
-      backendLog = undefined;
+      closeBackendLog();
       backendProcess = undefined;
       resolve();
     };
