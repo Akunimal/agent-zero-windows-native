@@ -23,6 +23,11 @@ The public fork contains no OpenCode Zen endpoint, `opencode2api` binary, Tor bi
 2. Start the application. It includes Python, the Python dependencies, Node.js, and Chromium; a system Python or Docker installation is not required.
 3. Read and acknowledge the native-mode warning before giving the agent access to real files or tools.
 
+The one-file portable build may take several minutes on its first launch while
+Windows extracts the bundled runtime to a temporary directory. It does not
+open a console during this step; later launches use the extracted payload and
+are faster. The NSIS installer avoids that one-file extraction pattern.
+
 For development and local packaging, see [the Windows native build guide](./docs/windows-native/README.md). The upstream Docker installation remains available below for users who want the stronger container boundary.
 
 ### Runtime boundary

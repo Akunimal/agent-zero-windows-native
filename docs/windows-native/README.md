@@ -47,6 +47,13 @@ npm run build:windows
 
 Artifacts are written to `artifacts/electron/`. The staging directory is `.a0-build/` and is ignored by Git. Build-time downloads are verified where the upstream vendor publishes checksums; the exact versions are recorded in the build log and `docs/windows-native/UPSTREAM-CONTRACT.md`.
 
+The portable target is a one-file self-extractor. Because the bundled runtime
+contains the full Python dependency set and Chromium, its first launch can
+take several minutes while roughly 3 GB of files are expanded into the local
+temporary directory. This is expected; the NSIS installer is the better choice
+for regular use, while portable is useful when the installation directory must
+remain movable.
+
 ## Updates from upstream
 
 Keep the fork's native changes in the documented touch points. Use `scripts/update-upstream.ps1` to fetch and merge `upstream/main`; it stops on conflicts, runs the native contract tests, and never force-resets a working tree. Do not copy the private runtime into this repository.
