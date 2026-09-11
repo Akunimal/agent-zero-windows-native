@@ -1,7 +1,10 @@
 from __future__ import annotations
 
 import atexit
-import fcntl
+try:
+    import fcntl
+except ImportError:  # Linux-only desktop locking; native Windows has no fcntl.
+    fcntl = None
 import hashlib
 import json
 import os
