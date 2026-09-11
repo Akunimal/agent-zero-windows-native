@@ -292,6 +292,13 @@ def update_project(name: str, data: EditProjectData):
     current.update(data)
     current = _normalizeEditData(current)
 
+    external_path = current.get("external_path", "")
+    paths = _external_project_paths()
+    if external_path:
+        paths[name] = _validate_external_path(external_path)
+        os.makedirs(paths[name], exist_ok=True)
+        _save_external_project_paths(paths)
+
     # save header data
     header = _edit_data_to_basic_data(current)
     save_project_header(name, header)

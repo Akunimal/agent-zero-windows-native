@@ -132,6 +132,13 @@ const model = {
     if (folder) this.selectedProject.external_path = folder;
   },
 
+  async chooseSelectedProjectFolder() {
+    const folder = await window.agentZeroWindows?.chooseProjectFolder?.();
+    if (folder && this.selectedProject) {
+      this.selectedProject.external_path = folder;
+    }
+  },
+
   async cloneProject() {
     // Security warning with custom dialog
     const confirmed = await showConfirmDialog({
