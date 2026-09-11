@@ -108,11 +108,15 @@ def _write_atomic(path: str, content: str) -> None:
             handle.flush()
             os.fsync(handle.fileno())
         os.replace(tmp_path, path)
-        directory_fd = os.open(directory, os.O_RDONLY)
-        try:
-            os.fsync(directory_fd)
-        finally:
-            os.close(directory_fd)
+        # POSIX allows opening a directory and fsyncing it. Windows rejects
+        # os.open(directory, os.O_RDONLY) with PermissionError; the file has
+        # already been flushed and os.replace is atomic within this volume.
+        if os.name != "nt":
+            directory_fd = os.open(directory, os.O_RDONLY)
+            try:
+                os.fsync(directory_fd)
+            finally:
+                os.close(directory_fd)
     finally:
         if os.path.exists(tmp_path):
             os.unlink(tmp_path)
