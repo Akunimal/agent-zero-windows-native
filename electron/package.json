@@ -1,7 +1,7 @@
 {
   "name": "agent-zero-electron-windows",
   "productName": "Agent Zero Windows",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Electron Windows distribution of Agent Zero with an embedded Python runtime.",
   "main": "main.cjs",
   "author": "Akunimal",

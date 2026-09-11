@@ -21,8 +21,6 @@ The native Windows mode is intentionally separate from the upstream Docker mode.
 
 > **Explicit security warning — read before using:** native Windows mode has **no Docker sandbox**. Agent Zero and its code-execution tools can access the Windows account, files, processes, network, and installed programs that can be reached by the packaged process. Use a standard, dedicated Windows account or a VM; avoid administrator privileges; keep backups; and use trusted prompts or models that are instructed to avoid destructive actions. Treat every generated command as potentially capable of modifying or deleting data. The red warning banner is also shown inside the Electron UI.
 
-The public fork contains no OpenCode Zen endpoint, `opencode2api` binary, Tor binary, private routing policy, API key, or private runtime configuration. Those belong to a separate local launcher outside this Git repository.
-
 ## Windows native quick start
 
 1. Download the Windows installer or portable artifact from a release.
@@ -65,6 +63,17 @@ The native build is intended for trusted, local workflows. It is not a drop-in r
 </div>
 
 > The XFCE desktop screenshots and Docker Canvas references below describe the upstream container workflow. They are not part of the Windows-native Electron runtime.
+
+## Windows native changelog — `windows-v0.1.2`
+
+- Added the native Windows folder picker for creating projects from any local drive or existing directory.
+- Kept external project registrations in user data without copying or deleting the selected folder.
+- Hardened native startup with a hidden, shell-free backend process, a dynamic loopback port, readiness checks, single-instance handling, and process-tree cleanup.
+- Preserved Windows-safe chat persistence and native Python, Node.js, PowerShell, and Chromium execution with bundled runtimes in release artifacts.
+- Kept the public fork provider-neutral and deployment-agnostic; credentials and endpoint settings remain outside the repository.
+- This build is unsigned because no Windows code-signing certificate is included; Windows SmartScreen may show an initial warning. Verify the release SHA256 values before installing.
+
+See the [Windows native documentation](./docs/windows-native/README.md) and [security contract](./docs/windows-native/SECURITY.md) before using the build.
 
 # Why Agent Zero
 

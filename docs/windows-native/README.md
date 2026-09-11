@@ -33,7 +33,7 @@ cd electron
 npm run dev
 ```
 
-The first native run creates local development data in `.a0-dev-data/usr`. Configure a model through the Agent Zero UI or through environment variables in a private launcher. Do not commit endpoint or credential settings to this repository.
+The first native run creates local development data in `.a0-dev-data/usr`. Configure a model through the Agent Zero UI or your own deployment environment. Do not commit endpoint or credential settings to this repository.
 
 ## Windows build
 
@@ -56,8 +56,4 @@ remain movable.
 
 ## Updates from upstream
 
-Keep the fork's native changes in the documented touch points. Use `scripts/update-upstream.ps1` to fetch and merge `upstream/main`; it stops on conflicts, runs the native contract tests, and never force-resets a working tree. Do not copy the private runtime into this repository.
-
-## Private OpenCode runtime
-
-The private launcher can set `A0_SET_chat_model_api_base`, `A0_SET_chat_model_name`, and the provider environment in the process that starts the portable executable. The public app remains provider-neutral. The OpenCode Zen gateway, `opencode2api`, Tor fleet, round-robin policy, logs, and any credentials must stay outside this repository.
+Keep the fork's native changes in the documented touch points. Use `scripts/update-upstream.ps1` to fetch and merge `upstream/main`; it stops on conflicts, runs the native contract tests, and never force-resets a working tree. Do not copy deployment-specific runtime files into this repository.

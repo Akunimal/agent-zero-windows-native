@@ -4,7 +4,7 @@
 
 The Windows distribution deliberately runs Agent Zero directly on the host. Docker isolation is not present. A prompt can cause code or PowerShell commands to run with the permissions of the Windows account that launched the app. The Electron renderer remains sandboxed, but that does not sandbox the Python backend or its execution tools.
 
-Use a dedicated standard Windows account, a VM, or the upstream Docker distribution for untrusted work. Do not run the portable binary elevated. Keep endpoint credentials in the private runtime environment and never add them to `usr/`, the public repository, build logs, or crash reports.
+Use a dedicated standard Windows account, a VM, or the upstream Docker distribution for untrusted work. Do not run the portable binary elevated. Keep endpoint credentials in the deployment environment and never add them to `usr/`, the public repository, build logs, or crash reports.
 
 ## Hardening contracts
 

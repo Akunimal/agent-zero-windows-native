@@ -15,6 +15,7 @@ test("Electron backend spawn is hidden, loopback-only, and shell-free", () => {
   assert.match(main, /windowsHide:\s*true/);
   assert.match(main, /shell:\s*false/);
   assert.match(main, /127\.0\.0\.1/);
+  assert.match(main, /listen\(0,\s*["']127\.0\.0\.1["']/);
   assert.match(main, /requestSingleInstanceLock/);
   assert.match(main, /A0_BROWSER_EXECUTABLE_PATH/);
   assert.match(main, /A0_USER_DIR \|\|/);

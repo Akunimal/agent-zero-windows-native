@@ -1,5 +1,6 @@
 import asyncio
 import os
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -44,14 +45,28 @@ print(path)
 
 def test_windows_native_contract_has_no_private_runtime_material():
     ignored_roots = {".git", ".a0-build", ".a0-dev-data", "artifacts", "node_modules"}
+    this_test = Path(__file__).resolve()
     public_files = [
         p
         for p in ROOT.rglob("*")
         if p.is_file()
+        and p.resolve() != this_test
         and not any(part in ignored_roots for part in p.relative_to(ROOT).parts)
     ]
-    forbidden = ("opencode2api", "tor.exe", "free-code-deepseek-harness")
-    matches = [str(path) for path in public_files if any(token.lower() in path.name.lower() for token in forbidden)]
+    forbidden = (
+        re.compile(r"opencode2api", re.IGNORECASE),
+        re.compile(r"(?<![a-z])tor\.exe(?![a-z])", re.IGNORECASE),
+        re.compile(r"free-code-deepseek-harness", re.IGNORECASE),
+    )
+    matches = []
+    for path in public_files:
+        haystack = path.name.lower()
+        try:
+            haystack += "\n" + path.read_text(encoding="utf-8").lower()
+        except UnicodeDecodeError:
+            pass
+        if any(token.search(haystack) for token in forbidden):
+            matches.append(str(path))
     assert matches == []
 
 

@@ -33,4 +33,4 @@ Build a new installer/portable artifact only after:
 - `/api/health` is reachable only through loopback;
 - PowerShell, Python, and Node smoke tests pass;
 - the bundled Python interpreter is used when system Python is absent;
-- the public tree contains no private gateway, Tor, endpoint, or credential material.
+- the public tree contains no deployment-specific endpoints, credentials, or local runtime state.
