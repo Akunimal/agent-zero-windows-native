@@ -11,6 +11,12 @@ Agent Zero is an open agent framework for work that needs more than chat: browse
 
 This repository is a public fork maintained by **Akunimal** with a focused goal: produce a Windows installer and a portable Windows distribution that embeds the Agent Zero Python backend, its Python dependencies, Chromium/Playwright, and the Node.js runtime. The Electron shell starts the backend in the background, keeps the UI on loopback, uses Windows-safe argument quoting, and shuts down the child process tree cleanly without opening a console window.
 
+## Windows native project picker
+
+The Windows-native fork includes a native folder picker in **New project**. You can select an existing local folder, including folders on another drive; existing projects continue to use the private `usr/projects` location. External project registrations are kept in the private user directory and deleting a registration does not delete the selected folder.
+
+This feature is delivered as a focused integration patch so it can be reapplied after upstream updates. See [the patch notes](docs/windows-native-project-picker.md). Native Windows mode has no Docker sandbox: use only folders, accounts, and models you trust.
+
 The native Windows mode is intentionally separate from the upstream Docker mode. The fork keeps the upstream project structure and makes the native behavior opt-in through small, documented contracts so future upstream updates can be merged with minimal conflicts. See [the Windows native documentation](./docs/windows-native/README.md) and [the upstream maintenance contract](./docs/windows-native/UPSTREAM-CONTRACT.md).
 
 > **Explicit security warning — read before using:** native Windows mode has **no Docker sandbox**. Agent Zero and its code-execution tools can access the Windows account, files, processes, network, and installed programs that can be reached by the packaged process. Use a standard, dedicated Windows account or a VM; avoid administrator privileges; keep backups; and use trusted prompts or models that are instructed to avoid destructive actions. Treat every generated command as potentially capable of modifying or deleting data. The red warning banner is also shown inside the Electron UI.

@@ -3,6 +3,8 @@
 const {
   app,
   BrowserWindow,
+  dialog,
+  ipcMain,
   shell,
 } = require("electron");
 const fs = require("node:fs");
@@ -37,6 +39,11 @@ let mainWindow;
 let backendProcess;
 let backendLogFd;
 let stopping = false;
+
+ipcMain.handle("agent-zero:choose-folder", async () => {
+  const result = await dialog.showOpenDialog({ title: "Seleccionar carpeta del proyecto", properties: ["openDirectory", "createDirectory"] });
+  return result.canceled ? null : (result.filePaths[0] || null);
+});
 
 function ensureDirectory(directory) {
   fs.mkdirSync(directory, { recursive: true });

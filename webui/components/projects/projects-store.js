@@ -127,6 +127,11 @@ const model = {
     await this.openEditModal(project.name);
   },
 
+  async chooseProjectFolder() {
+    const folder = await window.agentZeroWindows?.chooseProjectFolder?.();
+    if (folder) this.selectedProject.external_path = folder;
+  },
+
   async cloneProject() {
     // Security warning with custom dialog
     const confirmed = await showConfirmDialog({
@@ -415,6 +420,7 @@ const model = {
       color: "",
       git_url: "",
       git_token: "",
+      external_path: "",
     };
   },
 
@@ -601,6 +607,7 @@ const model = {
   },
 
   getSelectedAbsPath(...relPath) {
+    if (this.selectedProject?.external_path) return [this.selectedProject.external_path, ...relPath].join("\\");
     return ["/a0/usr/projects", this.selectedProject.name, ...relPath]
       .join("/")
       .replace(/\/+/g, "/");

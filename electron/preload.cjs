@@ -1,10 +1,11 @@
 "use strict";
 
-const { contextBridge } = require("electron");
+const { contextBridge, ipcRenderer } = require("electron");
 
 contextBridge.exposeInMainWorld("agentZeroWindows", {
   nativeWindows: true,
   sandboxWarning: "Native Windows mode has no Docker sandbox.",
+  chooseProjectFolder: () => ipcRenderer.invoke("agent-zero:choose-folder"),
 });
 
 window.addEventListener("DOMContentLoaded", () => {

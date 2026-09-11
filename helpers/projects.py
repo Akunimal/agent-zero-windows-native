@@ -1,4 +1,5 @@
 import os
+import json
 from typing import NotRequired, TypedDict, TYPE_CHECKING, cast
 
 from helpers import files, dirty_json, persist_chat, file_tree, extension
@@ -9,6 +10,7 @@ if TYPE_CHECKING:
     from agent import AgentContext
 
 PROJECTS_PARENT_DIR = "usr/projects"
+PROJECT_PATHS_FILE = "usr/projects/.a0-external-projects.json"
 PROJECT_META_DIR = ".a0proj"
 PROJECT_INSTRUCTIONS_DIR = "instructions"
 PROJECT_KNOWLEDGE_DIR = "knowledge"
@@ -47,6 +49,7 @@ class BasicProjectData(TypedDict):
     color: str
     git_url: str
     file_structure: FileStructureInjectionSettings
+    external_path: NotRequired[str]
 
 class GitStatusData(TypedDict, total=False):
     is_git_repo: bool
@@ -77,9 +80,26 @@ _PROJECT_TRANSIENT_INPUT_KEYS = frozenset({"git_token", "subagents"})
 def get_projects_parent_folder():
     return files.get_abs_path(PROJECTS_PARENT_DIR)
 
+def _external_project_paths() -> dict[str, str]:
+    try:
+        data = json.loads(files.read_file(PROJECT_PATHS_FILE))
+        return data if isinstance(data, dict) else {}
+    except Exception:
+        return {}
+
+def _save_external_project_paths(data: dict[str, str]):
+    files.write_file(PROJECT_PATHS_FILE, json.dumps(data, indent=2, ensure_ascii=False))
+
+def _validate_external_path(value: object) -> str:
+    candidate = os.path.abspath(os.path.expanduser(str(value or "").strip()))
+    if not candidate or not os.path.isabs(candidate) or os.path.isfile(candidate):
+        raise ValueError("Invalid external project folder")
+    return candidate
+
 
 def get_project_folder(name: str):
-    return files.get_abs_path(get_projects_parent_folder(), name)
+    project_name = validate_project_name(name)
+    return _external_project_paths().get(project_name) or files.get_abs_path(get_projects_parent_folder(), project_name)
 
 
 def get_project_meta(name: str, *sub_dirs: str):
@@ -98,8 +118,12 @@ def validate_project_name(name: str | None) -> str:
 
 
 def delete_project(name: str):
-    abs_path = files.get_abs_path(PROJECTS_PARENT_DIR, name)
-    files.delete_dir(abs_path)
+    paths = _external_project_paths()
+    if name in paths:
+        paths.pop(name, None)
+        _save_external_project_paths(paths)
+    else:
+        files.delete_dir(files.get_abs_path(PROJECTS_PARENT_DIR, name))
     deactivate_project_in_chats(name)
     return name
 
@@ -107,9 +131,17 @@ def delete_project(name: str):
 def create_project(name: str, data: BasicProjectData):
     extended_data = _project_extended_data_for_save(data)
     mcp_servers = data.get("mcp_servers") if isinstance(data, dict) else None
-    abs_path = files.create_dir_safe(
-        files.get_abs_path(PROJECTS_PARENT_DIR, name), rename_format="{name}_{number}"
-    )
+    external_path = data.get("external_path", "")
+    if external_path:
+        abs_path = _validate_external_path(external_path)
+        paths = _external_project_paths()
+        if name in paths:
+            raise ValueError("A project with this name already exists")
+        os.makedirs(abs_path, exist_ok=True)
+        paths[name] = abs_path
+        _save_external_project_paths(paths)
+    else:
+        abs_path = files.create_dir_safe(files.get_abs_path(PROJECTS_PARENT_DIR, name), rename_format="{name}_{number}")
     create_project_meta_folders(name)
     data = _normalizeBasicData(data)
     save_project_header(name, data)
@@ -202,6 +234,7 @@ def _normalizeBasicData(data: BasicProjectData) -> BasicProjectData:
             "file_structure",
             _default_file_structure_settings(),
         ),
+        "external_path": data.get("external_path", ""),
     }
 
 
@@ -226,6 +259,7 @@ def _normalizeEditData(data: EditProjectData) -> EditProjectData:
             "file_structure",
             _default_file_structure_settings(),
         ),
+        "external_path": data.get("external_path", ""),
     }
     return normalized
 
@@ -371,7 +405,18 @@ def save_project_mcp_servers(name: str, mcp_servers: str):
 
 
 def get_active_projects_list():
-    return _get_projects_list(get_projects_parent_folder())
+    projects = _get_projects_list(get_projects_parent_folder())
+    known = {item["name"] for item in projects}
+    for name, folder in _external_project_paths().items():
+        if name in known or not os.path.isdir(folder):
+            continue
+        try:
+            data = load_basic_project_data(name)
+            projects.append({"name": name, "title": data.get("title", ""), "description": data.get("description", ""), "color": data.get("color", "")})
+        except Exception as e:
+            PrintStyle.error(f"Error loading external project {name}: {e}")
+    projects.sort(key=lambda x: x["name"])
+    return projects
 
 
 def _get_projects_list(parent_dir):

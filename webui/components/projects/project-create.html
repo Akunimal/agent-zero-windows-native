@@ -17,6 +17,15 @@
                     </x-component>
 
                     <div class="projects-form-group">
+                        <label class="projects-form-label">Carpeta del proyecto (opcional)</label>
+                        <span class="projects-form-description">Sin carpeta, usa la ubicación privada de Agent Zero. Este fork no tiene sandbox: el agente podrá acceder a la carpeta elegida.</span>
+                        <div class="projects-input-with-button-wrapper">
+                            <input class="projects-form-input" type="text" readonly x-model="$store.projects.selectedProject.external_path" placeholder="Carpeta privada de Agent Zero">
+                            <button type="button" class="button icon-button" @click="$store.projects.chooseProjectFolder()"><x-icon class="icon" name="folder"></x-icon><span>Elegir carpeta</span></button>
+                        </div>
+                    </div>
+
+                    <div class="projects-form-group">
                         <label class="projects-form-label">Git Repository (optional)</label>
                         <span class="projects-form-description">Clone from an existing git repository. Leave empty to create an empty project.</span>
                         <input class="projects-form-input" type="text" 
